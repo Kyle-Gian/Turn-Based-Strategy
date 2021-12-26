@@ -1,8 +1,5 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.InputSystem;
 
 public class Pathfinding : MonoBehaviour
@@ -10,28 +7,32 @@ public class Pathfinding : MonoBehaviour
     private const int MOVE_STRAIGHT_COST = 10;
     private const int MOVE_DIAGONAL_COST = 14;
 
-    [SerializeField] private float maxMoveDistance;
-    
-
-    [SerializeField] private GameObject unit;
+    private Unit unit;
     private Grid grid;
+    
     private Vector3 mousePos;
-    private Node startNode = null;
-    private Node newStartNode = null;
-
-    private Node endNode = null;
     private Vector3 unitPos;
+
+    private Node startNode = null;
+    private Node endNode = null;
+    
     private bool objectMoving = false;
 
     private List<Node> openList;
     private List<Node> closedList;
     private List<Node> path;
+    
     private void Start()
     {
         grid = FindObjectOfType<Grid>();
-        GetClosestNodeToUnit();
     }
 
+    public void SetActiveUnit(Unit newUnit)
+    {
+        unit = newUnit;
+        GetClosestNodeToUnit();
+        objectMoving = false;
+    }
     private void Update()
     {
         if (unit != null)
@@ -45,7 +46,7 @@ public class Pathfinding : MonoBehaviour
             unitPos = unit.transform.position;
 
             mousePos = hit.point;
-            CheckMouseDistanceFromPlayer();
+            CheckMouseDistanceFromUnit();
             GetClosestNodeToMouse();
             
             if (endNode != null && startNode != null)
@@ -55,86 +56,39 @@ public class Pathfinding : MonoBehaviour
         }
     }
 
-    private void CheckMouseDistanceFromPlayer()
+    private void CheckMouseDistanceFromUnit()
     {
-
         float mouseDistanceFromPlayer = Vector3.Distance(startNode.nodePosition, mousePos);
 
-        if (mouseDistanceFromPlayer > maxMoveDistance)
+        if (mouseDistanceFromPlayer > unit.UnitMaxMoveDistance)
         {
             Vector3 dir = (mousePos - startNode.nodePosition).normalized;
-            mousePos = startNode.nodePosition + (maxMoveDistance * dir);
+            mousePos = startNode.nodePosition + (dir * unit.UnitMaxMoveDistance);
         }
-
     }
 
     private void GetClosestNodeToUnit()
     {
         unitPos = unit.transform.position;
-        float distanceToNode = 0;
-        Node currentNode;
-        bool startNodeFound = false;
+        startNode = grid.nodeArray[0,0];
         
+        float distanceToStartNode = Vector3.Distance(unitPos, startNode.nodePosition);
+
         for (int width = 0; width < grid.nodeArray.GetLength(0); width++)
         {
             for (int height = 0; height < grid.nodeArray.GetLength(1); height++)
             {
-                currentNode = grid.nodeArray[width, height];
-                distanceToNode = Vector3.Distance(unitPos, grid.nodeArray[width, height].nodePosition);
+                Node currentNode = grid.nodeArray[width, height];
+                float distanceToCurrentNode = Vector3.Distance(unitPos, currentNode.nodePosition);
                 
-                if (distanceToNode < 2f && currentNode.isNodeWalkable)
+                if (distanceToStartNode > distanceToCurrentNode && currentNode.isNodeWalkable)
                 {
+                    distanceToStartNode = distanceToCurrentNode;
                     startNode = currentNode;
-                    startNodeFound = true;
-                    break;
-                }
-            }
-
-            if (startNodeFound)
-            {
-                break;
-            }
-        }
-
-        if (startNode != null)
-        {
-            startNode = CheckNeighboursDist(startNode, distanceToNode);
-        }
-       
-    }
-
-    private Node CheckNeighboursDist(Node currentNode, float distance)
-    {
-        for (int x = currentNode.WidthPos - 1; x <= currentNode.WidthPos + 1; x++) 
-        {
-            //if out of bounds then skip
-            if (x > grid.nodeArray.GetLength(0) - 1|| x < 0)
-                continue;
-            
-            for (int y = currentNode.HeightPos - 1; y <= currentNode.HeightPos + 1; y++) 
-            {
-                //if out of bounds then skip
-                if (y > grid.nodeArray.GetLength(1) - 1 || y < 0)
-                    continue;
-                
-                //Skip if the node to check is the start node
-                if (x == currentNode.WidthPos && y == currentNode.HeightPos)
-                    continue;
-
-                //skip the Node if it is not walkable
-                if (!grid.nodeArray[x, y].isNodeWalkable)
-                    continue;
-
-                float distanceTocheck = Vector3.Distance(unitPos, grid.nodeArray[currentNode.WidthPos, currentNode.HeightPos].nodePosition);
-                
-                if (distanceTocheck < distance)
-                {
-                    currentNode = grid.nodeArray[x, y];
                 }
             }
         }
 
-        return currentNode;
     }
 
     public List<Vector3> SetPath()
@@ -147,50 +101,27 @@ public class Pathfinding : MonoBehaviour
             newAgentPath.Add(node.nodePosition);
         }
 
-        newStartNode = path[path.Count - 1];
         return newAgentPath;
     }
-
-    public void SetNewStartNode()
-    {
-        startNode = newStartNode;
-        objectMoving = false;
-
-    }
-
     void GetClosestNodeToMouse()
     {
-        Node currentNode;
-        float distanceToNode = 0;
-        bool endNodeFound = false;
+        if (endNode == null)
+            endNode = grid.nodeArray[0, 0];
+        
+        float distToEndNode = Vector3.Distance(mousePos, endNode.nodePosition);
 
         for (int width = 0; width < grid.nodeArray.GetLength(0); width++)
         {
             for (int height = 0; height < grid.nodeArray.GetLength(1); height++)
             {
-                currentNode = grid.nodeArray[width, height];
-                distanceToNode = Vector3.Distance(mousePos, currentNode.nodePosition);
+                Node currentNode = grid.nodeArray[width, height];
+                float distanceToCurrentNode = Vector3.Distance(mousePos, currentNode.nodePosition);
                 
-                if (distanceToNode < 3f && currentNode.isNodeWalkable)
+                if (distToEndNode > distanceToCurrentNode && currentNode.isNodeWalkable)
                 {
+                    distToEndNode = distanceToCurrentNode;
                     endNode = currentNode;
-                    endNodeFound = true;
-                    break;
                 }
-            }
-
-            if (endNodeFound)
-            {
-                break;
-            }
-        }
-
-        if (endNode != null)
-        {
-            endNode = CheckNeighboursDist(endNode, distanceToNode);
-            if (!endNode.isNodeWalkable)
-            {
-                endNode = null;
             }
         }
     }

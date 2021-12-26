@@ -7,16 +7,17 @@ using Mirror;
 public class GameNetworkManager : NetworkManager
 {
     
-    public override void OnServerConnect(NetworkConnection conn)
+    public override void OnServerAddPlayer(NetworkConnection conn)
     {
-        base.OnServerConnect(conn);
-        GameLogic.instance.AddPlayerToGameList(conn.identity);
+        base.OnServerAddPlayer(conn);
+        //GameLogic.instance.AddPlayerToGameList(conn.identity);
     }
 
     public override void OnServerDisconnect(NetworkConnection conn)
     {
         base.OnServerDisconnect(conn);
-        GameLogic.instance.RemovePlayerFromGameList(conn.identity);
+        //GameLogic.instance.RemovePlayerFromGameList(conn.identity);
 
     }
+    
 }

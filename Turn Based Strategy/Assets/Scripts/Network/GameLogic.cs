@@ -1,67 +1,46 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Mirror;
-using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class GameLogic : NetworkBehaviour
+public class GameLogic : MonoBehaviour
 {
     public static GameLogic instance;
-    private List<NetworkIdentity> playersInGame = new List<NetworkIdentity>();
+    [SerializeField]private List<PlayerLogic> players;
+    private int playerIndex = 0;
     private PlayerLogic currentPlayerLogic;
     private int currentPlayerTurn;
     private Coroutine playerTurnCo;
     private float turnTimer = 90;
     private bool timerComplete = false;
+    [SerializeField] private GameObject unitPrefab;
+    
 
-    private void Start()
+    private void Awake()
     {
-        DontDestroyOnLoad(this);
-        instance = this;
+        foreach (var player in players)
+        {
+            player.PlayerTurnComplete.AddListener(PlayerTurnCompleted);
+        }
+        
+        currentPlayerLogic = players[0].GetComponent<PlayerLogic>();
+        currentPlayerLogic.PlayerTurnStart();
+        playerTurnCo = StartCoroutine(PlayerTurnTimer());
+
     }
     
-    public void AddPlayerToGameList(NetworkIdentity player)
-    {
-        playersInGame.Add(player);
-    }
-    public void RemovePlayerFromGameList(NetworkIdentity player)
-    {
-        playersInGame.Remove(player);
-    }
-
-    public void OnGameStart()
-    {
-        currentPlayerTurn = Random.Range(0,playersInGame.Count);
-
-        currentPlayerLogic = playersInGame[currentPlayerTurn].GetComponent<PlayerLogic>();
-        
-        currentPlayerLogic.PlayerTurnStart();
-        StartCoroutine(PlayerTurnTimer());
-    }
-
     public void PlayerTurnCompleted()
     {
         //Check if the player finished before turn timer completed
-        if (!timerComplete)
+        if (!timerComplete && playerTurnCo != null)
         {
             //Stop the Coroutine
             StopCoroutine(playerTurnCo);
         }
         currentPlayerLogic.PlayerTurnEnd();
-        
-        //Check who's turn it is next
-        if (currentPlayerTurn >= playersInGame.Count)
-        {
-            currentPlayerTurn = 0;
-        }
-        else
-        {
-            currentPlayerTurn++;
-        }
-        
-        currentPlayerLogic = playersInGame[currentPlayerTurn].GetComponent<PlayerLogic>();
+
+        currentPlayerLogic = players[playerIndex].GetComponent<PlayerLogic>();
         
         currentPlayerLogic.PlayerTurnStart();
         timerComplete = false;
@@ -72,8 +51,14 @@ public class GameLogic : NetworkBehaviour
     {
         yield return new WaitForSeconds(turnTimer);
         timerComplete = true;
+        if (playerIndex >= players.Count)
+        {
+            playerIndex = 0;
+        }
+        else
+        {
+            playerIndex++;
+        }
         PlayerTurnCompleted();
     }
-    
-    
 }

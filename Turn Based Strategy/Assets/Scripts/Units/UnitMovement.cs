@@ -1,73 +1,40 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Mirror;
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class UnitMovement : MonoBehaviour
 {
     private NavMeshAgent agent;
-    private Vector3 currentMousePos;
-    private Pathfinding pathfinding;
-    private List<Vector3> path;
     int index;
-    private bool agentMoving = false;
-
-
+    public event Action OnPathComplete;
     // Start is called before the first frame update
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        pathfinding = GetComponent<Pathfinding>();
     }
-
-    // Update is called once per frame
-    void Update()
+    
+    public void MoveUnit(List<Vector3> path)
     {
-        if (Mouse.current.leftButton.isPressed && !agentMoving)
+        if (agent != null)
         {
-            path = pathfinding.SetPath();
-            agentMoving = true;
-            index = 0;
+            agent.SetDestination(path[index]);
         }
-        
-        if (!agent.hasPath && path != null)
+        if (index != path.Count - 1)
         {
-            if (index != path.Count)
+            if (agent.remainingDistance <= 0.02f)
             {
-                agent.SetDestination(path[index]);
                 index++;
-            }
-            else
-            {
-                index = 0;
-                path.Clear();
-                agentMoving = false;
-                pathfinding.SetNewStartNode();
+                agent.SetDestination(path[index]);
             }
         }
-    }
-
-    private void OnDrawGizmos()
-    {
-        if (path != null)
+        else
         {
-            if (path.Count != 0)
-            {
-                Vector3 nextPos = path[0];
-            
-                foreach (var pos in path)
-                {
-                    Gizmos.color = Color.red;
-                    Gizmos.DrawLine(nextPos, pos);
-                    nextPos = pos;
-                }
-            }
-
+            index = 0;
+            path.Clear();
+            OnPathComplete?.Invoke();
         }
     }
 }
