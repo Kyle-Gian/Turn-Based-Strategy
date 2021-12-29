@@ -6,6 +6,8 @@ using UnityEngine;
 public class Unit : MonoBehaviour
 {
     public float UnitMaxMoveDistance;
+    public int unitDamagePower;
+    public int attackRange;
     private UnitMovement unitMovement;
     private List<Vector3> path;
     public bool unitIsMoving = false;
@@ -13,6 +15,7 @@ public class Unit : MonoBehaviour
 
     private void Start()
     {
+        attackRange = attackRange * FindObjectOfType<Grid>().nodesPerZone;
         UnitMovementComplete = false;
         unitMovement = GetComponent<UnitMovement>();
         unitMovement.OnPathComplete += UnitHasFinishedMovement;
@@ -29,6 +32,11 @@ public class Unit : MonoBehaviour
         UnitMovementComplete = true;
     }
 
+    public void ResetUnitMovement()
+    {
+        UnitMovementComplete = false;
+    }
+
     public void SetUnitPath(List<Vector3> newPath)
     {
         path = newPath;
@@ -42,6 +50,14 @@ public class Unit : MonoBehaviour
         unitMovement.MoveUnit(path);
     }
 
+    public void AttackEnemy(GameObject enemy)
+    {
+        Health enemyHealth = enemy.GetComponent<Health>();
+        
+        enemyHealth.TakeDamage(unitDamagePower);
+    }
+    
+    
     private void OnDrawGizmos()
     {
         if (path != null)

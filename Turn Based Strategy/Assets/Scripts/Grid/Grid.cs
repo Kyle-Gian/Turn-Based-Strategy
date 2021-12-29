@@ -2,13 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+[ExecuteInEditMode]
 public class Grid : MonoBehaviour
 {
     private int width;
     private int height;
     [SerializeField] private float obstructionRadiusCheck = .5f;
-    [SerializeField] private int nodesPerZone = 2;
-    
+    public int nodesPerZone = 2;
+    [SerializeField] private GameObject nodePosSphere;
+    private LayerMask nonWalkableLayerMask;
+    private LayerMask unitLayerMask;
+
     public Node[,] nodeArray;
 
     private Mesh objectMesh;
@@ -20,10 +24,13 @@ public class Grid : MonoBehaviour
         width = (int)objectMesh.bounds.size.z * nodesPerZone;
         nodeArray = new Node[width + 1, height + 1];
 
+        nonWalkableLayerMask = LayerMask.GetMask("NonWalkableObject");
+        unitLayerMask = LayerMask.GetMask("Unit");
+
         CreateGrid();
     }
 
-    public void CreateGrid()
+    private void CreateGrid()
     {
         float distanceToNextSphere = objectMesh.bounds.size.x / width;
         float nextSphereDistanceZ = 0;
@@ -37,7 +44,12 @@ public class Grid : MonoBehaviour
                 Vector3 newNodePos = transform.TransformPoint(new Vector3(objectMesh.bounds.min.x + nextSphereDistanceX,
                     0, objectMesh.bounds.min.z + nextSphereDistanceZ));
                 
-                nodeArray[x, y] = new Node(newNodePos, CheckForObstruction(newNodePos),x, y);
+                nodeArray[x, y] = new Node(newNodePos, CheckForObstruction(newNodePos), CheckForPlayerObstruction(newNodePos),x, y);
+
+                //if (nodeArray[x,y].isNodeWalkable)
+                //{
+                    //Instantiate(nodePosSphere, newNodePos, Quaternion.identity);
+                //}
                 
                 nextSphereDistanceX += distanceToNextSphere;
             }
@@ -45,9 +57,17 @@ public class Grid : MonoBehaviour
         }
     }
 
-    private bool CheckForObstruction(Vector3 position)
+    public bool RedrawGrid()
     {
-       Collider[] obstructingColliders = Physics.OverlapSphere(position,obstructionRadiusCheck);
+        nodeArray = null;
+        CreateGrid();
+
+        return true;
+    }
+
+    private bool CheckForPlayerObstruction(Vector3 position)
+    {
+        Collider[] obstructingColliders = Physics.OverlapSphere(position,obstructionRadiusCheck, unitLayerMask);
        
         if (obstructingColliders.Length != 0)
         {
@@ -55,6 +75,27 @@ public class Grid : MonoBehaviour
             
             foreach (var collider in obstructingColliders)
             {
+                //Check to make sure collider is not our own
+                if (collider != thisCollider)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    private bool CheckForObstruction(Vector3 position)
+    {
+       Collider[] obstructingColliders = Physics.OverlapSphere(position,obstructionRadiusCheck, nonWalkableLayerMask);
+       
+        if (obstructingColliders.Length != 0)
+        {
+            Collider thisCollider = gameObject.GetComponent<Collider>();
+            
+            foreach (var collider in obstructingColliders)
+            {
+                //Check to make sure collider is not our own
                 if (collider != thisCollider)
                 {
                     return false;
@@ -72,17 +113,23 @@ public class Grid : MonoBehaviour
             {
                 for (int y = 0; y != nodeArray.GetLength(1); y++)
                 {
-                    if (nodeArray[x,y].isNodeWalkable)
+                    Node nodeToDraw = nodeArray[x, y];
+                    if (nodeToDraw.isNodeWalkable && !nodeToDraw.unitIsOnNode)
                     {
                         Gizmos.color = Color.green;
-                        Gizmos.DrawSphere(nodeArray[x,y].nodePosition, .1f);
+                        Gizmos.DrawSphere(nodeToDraw.nodePosition, .1f);
+
+                    }
+                    else if(!nodeToDraw.isNodeWalkable && !nodeToDraw.unitIsOnNode)
+                    {
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawSphere(nodeToDraw.nodePosition, .1f);
 
                     }
                     else
                     {
-                        Gizmos.color = Color.red;
-                        Gizmos.DrawSphere(nodeArray[x,y].nodePosition, .1f);
-
+                        Gizmos.color = Color.yellow;
+                        Gizmos.DrawSphere(nodeToDraw.nodePosition, .1f);
                     }
 
                 }

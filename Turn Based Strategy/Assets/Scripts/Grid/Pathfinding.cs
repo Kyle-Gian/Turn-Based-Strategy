@@ -22,13 +22,17 @@ public class Pathfinding : MonoBehaviour
     private List<Node> closedList;
     private List<Node> path;
     
-    private void Start()
+    private void OnEnable()
     {
         grid = FindObjectOfType<Grid>();
     }
 
     public void SetActiveUnit(Unit newUnit)
     {
+        if (startNode != null)
+        {
+            startNode.unitIsOnNode = true;
+        }
         unit = newUnit;
         GetClosestNodeToUnit();
         objectMoving = false;
@@ -71,7 +75,7 @@ public class Pathfinding : MonoBehaviour
     {
         unitPos = unit.transform.position;
         startNode = grid.nodeArray[0,0];
-        
+
         float distanceToStartNode = Vector3.Distance(unitPos, startNode.nodePosition);
 
         for (int width = 0; width < grid.nodeArray.GetLength(0); width++)
@@ -89,6 +93,8 @@ public class Pathfinding : MonoBehaviour
             }
         }
 
+        startNode.unitIsOnNode = false;
+
     }
 
     public List<Vector3> SetPath()
@@ -101,6 +107,7 @@ public class Pathfinding : MonoBehaviour
             newAgentPath.Add(node.nodePosition);
         }
 
+        startNode = path[path.Count - 1];
         return newAgentPath;
     }
     void GetClosestNodeToMouse()
@@ -117,7 +124,7 @@ public class Pathfinding : MonoBehaviour
                 Node currentNode = grid.nodeArray[width, height];
                 float distanceToCurrentNode = Vector3.Distance(mousePos, currentNode.nodePosition);
                 
-                if (distToEndNode > distanceToCurrentNode && currentNode.isNodeWalkable)
+                if (distToEndNode > distanceToCurrentNode && currentNode.isNodeWalkable && !currentNode.unitIsOnNode)
                 {
                     distToEndNode = distanceToCurrentNode;
                     endNode = currentNode;
@@ -165,7 +172,7 @@ public class Pathfinding : MonoBehaviour
                     continue;
                 }
 
-                if (!neighbourNode.isNodeWalkable)
+                if (!neighbourNode.isNodeWalkable || currentNode.unitIsOnNode)
                 {
                     closedList.Add(neighbourNode);
                     continue;

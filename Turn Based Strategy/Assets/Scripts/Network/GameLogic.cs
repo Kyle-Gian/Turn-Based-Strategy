@@ -17,7 +17,7 @@ public class GameLogic : MonoBehaviour
     [SerializeField] private GameObject unitPrefab;
     
 
-    private void Awake()
+    private void Start()
     {
         foreach (var player in players)
         {
@@ -32,6 +32,7 @@ public class GameLogic : MonoBehaviour
     
     public void PlayerTurnCompleted()
     {
+        NextPlayersTurn();
         //Check if the player finished before turn timer completed
         if (!timerComplete && playerTurnCo != null)
         {
@@ -60,5 +61,17 @@ public class GameLogic : MonoBehaviour
             playerIndex++;
         }
         PlayerTurnCompleted();
+    }
+
+    private void NextPlayersTurn()
+    {
+        if (playerIndex >= players.Count - 1)
+        {
+            playerIndex = 0;
+        }
+        else
+        {
+            playerIndex++;
+        }
     }
 }

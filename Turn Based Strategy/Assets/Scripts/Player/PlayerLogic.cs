@@ -3,134 +3,69 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
-public class PlayerLogic : MonoBehaviour
+public class PlayerLogic : MovementLogic
 {
-    private bool playerTurn = false;
-    private Unit selectedUnit;
-    public List<Unit> myUnits = new List<Unit>();
-    private Pathfinding pathFinding;
-    private int currentUnitInList = 0;
-    public UnityEvent PlayerTurnComplete;
-
-    private void Start()
+    protected override void LogicToMakeMoves()
     {
-        pathFinding = GetComponent<Pathfinding>();
-        
-        if (selectedUnit == null)
+        //Check if the current selected unit is moving
+        if (!selectedUnit.unitIsMoving)
         {
-            selectedUnit = myUnits[0];
-            pathFinding.SetActiveUnit(selectedUnit);
-        }
-    }
-
-    public void PlayerTurnStart()
-    {
-        playerTurn = true;
-    }
-    public void PlayerTurnEnd()
-    {
-        playerTurn = false;
-    }
-
-    private void Update()
-    {
-        if (playerTurn)
-        {
-            //Check if the current selected unit is moving
-            if (!selectedUnit.unitIsMoving)
+            //Check if player clicked mouse
+            if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                //Check if player clicked mouse
-                if (Mouse.current.leftButton.wasPressedThisFrame)
+                MoveUnitToPosition();
+            }
+            else if (Mouse.current.rightButton.wasPressedThisFrame)
+            {
+                //checks if enemy or player unit has been selected
+                UnitSelection();
+
+                //If enemy has been selected attack the enemy
+                if (unitToAttack != null)
                 {
-                    if (!UnitSelectionChange())
-                        MoveUnitToPosition();
+                    float distToTarget = Vector3.Distance(selectedUnit.transform.position, unitToAttack.transform.position);
+                    //Attack If unit is in range
+                    if (distToTarget <= selectedUnit.attackRange)
+                        selectedUnit.AttackEnemy(unitToAttack.gameObject);
+                    
+                    unitToAttack = null;
                 }
             }
-            else
-            {
-                selectedUnit.UnitIsMoving();
-            }
-        
-            if (selectedUnit.UnitMovementComplete)
-            {
-                UnitFinishedMovement();
-            }
+            
         }
-
+        else
+            selectedUnit.UnitIsMoving();
+        
+        if (selectedUnit.UnitMovementComplete)
+            UnitFinishedMovement();
+            
     }
 
-    private bool UnitSelectionChange()
+    private void UnitSelection()
     {
         Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
 
         if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, -1))
-            return false;
+            return;
 
         if (hit.transform.TryGetComponent(out Unit newUnit))
         {
-            foreach (var unit in myUnits)
+            bool isUnitTarget = true;
+            
+            //Check if the unit is mine
+            for(int unitPos = 0; unitPos < myUnits.Count; unitPos++)
             {
-                if (newUnit == unit)
+                if (newUnit == myUnits[unitPos])
                 {
-                    selectedUnit = newUnit;
-                    break;
+                    ChangeSelectedUnit(unitPos);
+                    isUnitTarget = false;
                 }
             }
-            return true;
+
+            //If the selected target is not my unit set the unit to attack
+            if (isUnitTarget)
+                unitToAttack = newUnit;
         }
-
-        return false;
     }
 
-    public void AddNewUnitToMyList(Unit newUnit)
-    {
-        myUnits.Add(newUnit);
-    }
-    
-    public void RemoveUnitFromMyList(Unit unit)
-    {
-        myUnits.Remove(unit);
-    }
-
-    private void MoveUnitToPosition()
-    {
-        selectedUnit.SetUnitPath(pathFinding.SetPath());
-
-    }
-
-    private void UnitFinishedMovement()
-    {
-        if (!CheckForTurnCompletion())
-        {
-            pathFinding.SetActiveUnit(selectedUnit);
-            GetNextUnitInList();
-        }
-        else
-            PlayerTurnEnd();
-    }
-
-    private void GetNextUnitInList()
-    {
-        if (currentUnitInList >= myUnits.Count)
-            currentUnitInList = 0;
-        else
-            currentUnitInList++;
-        
-        selectedUnit = myUnits[currentUnitInList];
-        pathFinding.SetActiveUnit(selectedUnit);
-    }
-
-    private bool CheckForTurnCompletion()
-    {
-        foreach (var unit in myUnits)
-        {
-            if (unit.UnitMovementComplete == false)
-            {
-                return false;
-            }
-        }
-        PlayerTurnComplete.Invoke();
-        return true;
-    }
-    
 }
