@@ -12,6 +12,7 @@ public class Grid : MonoBehaviour
     [SerializeField] private GameObject nodePosSphere;
     private LayerMask nonWalkableLayerMask;
     private LayerMask unitLayerMask;
+    public float distanceToNextSphere;
 
     public Node[,] nodeArray;
 
@@ -19,10 +20,12 @@ public class Grid : MonoBehaviour
 
     private void Awake()
     {
+
         objectMesh = GetComponent<MeshCollider>().sharedMesh;
         height = (int)objectMesh.bounds.size.x * nodesPerZone;
         width = (int)objectMesh.bounds.size.z * nodesPerZone;
         nodeArray = new Node[width + 1, height + 1];
+        distanceToNextSphere = objectMesh.bounds.size.x / width;
 
         nonWalkableLayerMask = LayerMask.GetMask("NonWalkableObject");
         unitLayerMask = LayerMask.GetMask("Unit");
@@ -32,7 +35,6 @@ public class Grid : MonoBehaviour
 
     private void CreateGrid()
     {
-        float distanceToNextSphere = objectMesh.bounds.size.x / width;
         float nextSphereDistanceZ = 0;
         float nextSphereDistanceX = distanceToNextSphere;
 

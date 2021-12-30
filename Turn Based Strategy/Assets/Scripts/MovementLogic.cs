@@ -75,14 +75,22 @@ public class MovementLogic : MonoBehaviour
 
     protected void UnitFinishedMovement()
     {
-        if (!CheckForTurnCompletion())
+        //If the unit still has moves left reset pathfinding start node pos
+        if (selectedUnit.unitHasMovesLeft)
         {
-            GetNextUnitInList();
+            pathFinding.SetActiveUnit(selectedUnit);
+            return;
         }
+        
+        //check if all units in my units have completed all their moves
+        if (!CheckForTurnCompletion())
+            GetNextUnitInList();
+        
     }
     
     private void GetNextUnitInList()
     {
+        
         if (currentUnitPosInList >= myUnits.Count - 1)
             currentUnitPosInList = 0;
         else

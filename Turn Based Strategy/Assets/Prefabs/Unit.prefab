@@ -112,7 +112,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b89435ee39b9bb46a46f4bf0c9d5a49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  unitSpeed: 1
+  unitSpeed: 3
 --- !u!114 &-2585739774616871578
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -126,10 +126,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   UnitMaxMoveDistance: 10
+  unitCurrentMoveDistance: 0
   unitDamagePower: 1
   attackRange: 2
   unitIsMoving: 0
   UnitMovementComplete: 0
+  unitHasMovesLeft: 0
 --- !u!114 &1206621415071356830
 MonoBehaviour:
   m_ObjectHideFlags: 0

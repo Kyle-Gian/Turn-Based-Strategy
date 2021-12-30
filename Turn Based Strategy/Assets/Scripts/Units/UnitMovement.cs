@@ -14,15 +14,16 @@ public class UnitMovement : MonoBehaviour
     {
         float step = unitSpeed * Time.deltaTime;
         
+        //Used for first iteration if the position has not been set
         if (posToMoveTowards == Vector3.zero)
             posToMoveTowards = new Vector3(path[index].x, path[index].y + .5f, path[index].z);
         
         transform.localPosition = Vector3.MoveTowards(transform.localPosition, posToMoveTowards, step);
         
-
+        //When unit reaches destination increase index/move to next position
         if (Vector3.Distance(transform.position, posToMoveTowards) <= 0.001f)
             index++;
-        
+        //Reached the end of the path, reset for next move
         if(index == path.Count)
         {
             index = 0;

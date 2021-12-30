@@ -4,8 +4,8 @@ using UnityEngine.InputSystem;
 
 public class Pathfinding : MonoBehaviour
 {
-    private const int MOVE_STRAIGHT_COST = 10;
-    private const int MOVE_DIAGONAL_COST = 14;
+    private const int MOVE_STRAIGHT_COST = 1;
+    private const int MOVE_DIAGONAL_COST = 2;
 
     private Unit unit;
     private Grid grid;
@@ -17,7 +17,8 @@ public class Pathfinding : MonoBehaviour
     private Node endNode = null;
     
     private bool objectMoving = false;
-
+    private float maxMoveCost = 0;
+    
     private List<Node> openList;
     private List<Node> closedList;
     private List<Node> path;
@@ -34,6 +35,8 @@ public class Pathfinding : MonoBehaviour
             startNode.unitIsOnNode = true;
         }
         unit = newUnit;
+        maxMoveCost = unit.unitCurrentMoveDistance;
+        
         GetClosestNodeToUnit();
         objectMoving = false;
     }
@@ -64,11 +67,10 @@ public class Pathfinding : MonoBehaviour
     {
         float mouseDistanceFromPlayer = Vector3.Distance(startNode.nodePosition, mousePos);
 
-        if (mouseDistanceFromPlayer > unit.UnitMaxMoveDistance)
-        {
-            Vector3 dir = (mousePos - startNode.nodePosition).normalized;
-            mousePos = startNode.nodePosition + (dir * unit.UnitMaxMoveDistance);
-        }
+
+        Vector3 dir = (mousePos - startNode.nodePosition).normalized;
+        mousePos = startNode.nodePosition + dir * mouseDistanceFromPlayer;
+        
     }
 
     private void GetClosestNodeToUnit()
@@ -149,7 +151,8 @@ public class Pathfinding : MonoBehaviour
 
             }
         }
-
+        
+        
         startNode.gCost = 0;
         startNode.hCost = CalculateDistanceCost(startNode, endNode);
         startNode.CalculateFCost();
@@ -157,6 +160,8 @@ public class Pathfinding : MonoBehaviour
         while (openList.Count > 0)
         {
             Node currentNode = GetLowestFCostNode(openList);
+            
+            //End node has been found, path complete
             if (currentNode == endNode)
             {
                 return CalculatePath(endNode);
@@ -206,21 +211,43 @@ public class Pathfinding : MonoBehaviour
         List<Node> path = new List<Node>();
         path.Add(endNode);
         Node currentNode = endNode;
-
+        
         while (currentNode.prevNode != null)
         {
             path.Add(currentNode.prevNode);
             currentNode = currentNode.prevNode;
         }
+        
         path.Reverse();
 
+        //If the path cost exceeds the max move cost of the unit return a reduced path
+        if (path[0].hCost >= maxMoveCost)
+            path = ReducePathToMaxCost(path);
+        
+
         return path;
+    }
+
+    private List<Node> ReducePathToMaxCost(List<Node> path)
+    {
+        List<Node> reducedPath = new List<Node>();
+        
+        foreach (var node in path)
+        {
+            if (node.gCost <= maxMoveCost)
+            {
+                reducedPath.Add(node);
+            }
+            else
+                break;
+        }
+        return reducedPath;
     }
 
     private float CalculateDistanceCost(Node a, Node b)
     {
         float xDistance = Mathf.Abs(a.nodePosition.x - b.nodePosition.x);
-        float yDistance = Mathf.Abs(a.nodePosition.y - b.nodePosition.y);
+        float yDistance = Mathf.Abs(a.nodePosition.z - b.nodePosition.z);
         float remaining = Mathf.Abs(xDistance - yDistance);
 
         return MOVE_DIAGONAL_COST * Mathf.Min(xDistance, yDistance) + MOVE_STRAIGHT_COST * remaining;
