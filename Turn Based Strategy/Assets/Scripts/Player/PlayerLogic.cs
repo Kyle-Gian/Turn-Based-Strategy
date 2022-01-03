@@ -35,9 +35,10 @@ public class PlayerLogic : MovementLogic
         }
         else
             selectedUnit.UnitIsMoving();
-        
+
         if (selectedUnit.UnitMovementComplete)
             UnitFinishedMovement();
+        
             
     }
 
@@ -67,5 +68,5 @@ public class PlayerLogic : MovementLogic
                 unitToAttack = newUnit;
         }
     }
-
+    
 }

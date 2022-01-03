@@ -9,6 +9,9 @@ public class Pathfinding : MonoBehaviour
 
     private Unit unit;
     private Grid grid;
+    [SerializeField] private DrawUnitPath drawUnitPath;
+
+    private bool pathHasBeenSet = false;
     
     private Vector3 mousePos;
     private Vector3 unitPos;
@@ -18,10 +21,12 @@ public class Pathfinding : MonoBehaviour
     
     private bool objectMoving = false;
     private float maxMoveCost = 0;
+    public float pathCost = 0;
     
     private List<Node> openList;
     private List<Node> closedList;
     private List<Node> path;
+    private List<Vector3> nodePositionsPath = new List<Vector3>();
     
     private void OnEnable()
     {
@@ -30,12 +35,14 @@ public class Pathfinding : MonoBehaviour
 
     public void SetActiveUnit(Unit newUnit)
     {
+        pathHasBeenSet = false;
+        drawUnitPath.DisablePathLine();
         if (startNode != null)
         {
             startNode.unitIsOnNode = true;
         }
         unit = newUnit;
-        maxMoveCost = unit.unitCurrentMoveDistance;
+        maxMoveCost = unit.unitLeftoverMoveDistance;
         
         GetClosestNodeToUnit();
         objectMoving = false;
@@ -59,6 +66,14 @@ public class Pathfinding : MonoBehaviour
             if (endNode != null && startNode != null)
             {
                 path = FindPath();
+
+                if (!pathHasBeenSet)
+                {
+                    UpdateListOfNodePositions();
+                    drawUnitPath.DrawPotentialPath(nodePositionsPath);
+
+                }
+
             }
         }
     }
@@ -102,15 +117,29 @@ public class Pathfinding : MonoBehaviour
     public List<Vector3> SetPath()
     {
         objectMoving = true;
-        List<Vector3> newAgentPath = new List<Vector3>();
+        pathCost = path[0].hCost;
+        pathHasBeenSet = true;
+        drawUnitPath.SetPathLine(nodePositionsPath);
+        
+        startNode = path[path.Count - 1];
+        return nodePositionsPath;
+    }
 
-        foreach (var node in path)
+    private void UpdateListOfNodePositions()
+    {
+        if (nodePositionsPath != null)
+            nodePositionsPath.Clear();
+
+
+        if (path != null)
         {
-            newAgentPath.Add(node.nodePosition);
+            foreach (var node in path)
+            {
+                nodePositionsPath.Add(node.nodePosition);
+            }
         }
 
-        startNode = path[path.Count - 1];
-        return newAgentPath;
+        
     }
     void GetClosestNodeToMouse()
     {

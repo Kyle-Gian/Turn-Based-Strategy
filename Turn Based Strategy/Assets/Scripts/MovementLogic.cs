@@ -6,12 +6,12 @@ using UnityEngine.Events;
 
 public class MovementLogic : MonoBehaviour
 {
-    
     private bool playerTurn = false;
     protected Unit selectedUnit;
     protected Unit unitToAttack;
     public List<Unit> myUnits = new List<Unit>();
     private List<Unit> attackableTargets = new List<Unit>();
+    protected List<Vector3> currentUnitPath;
 
     protected Pathfinding pathFinding;
     protected int currentUnitPosInList = 0;
@@ -69,8 +69,9 @@ public class MovementLogic : MonoBehaviour
     
     protected void MoveUnitToPosition()
     {
-        selectedUnit.SetUnitPath(pathFinding.SetPath());
-
+        currentUnitPath = pathFinding.SetPath();
+        selectedUnit.SetUnitPath(currentUnitPath);
+        selectedUnit.costOfMovementThisTurn = pathFinding.pathCost;
     }
 
     protected void UnitFinishedMovement()
@@ -79,6 +80,7 @@ public class MovementLogic : MonoBehaviour
         if (selectedUnit.unitHasMovesLeft)
         {
             pathFinding.SetActiveUnit(selectedUnit);
+            selectedUnit.UnitMovementComplete = false;
             return;
         }
         
