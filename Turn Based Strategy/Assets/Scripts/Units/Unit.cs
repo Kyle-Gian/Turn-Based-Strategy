@@ -6,14 +6,15 @@ using UnityEngine;
 public class Unit : MonoBehaviour
 {
     [SerializeField] private float UnitMaxMoveDistance;
-    [HideInInspector] public float unitCurrentMoveDistance;
+    [HideInInspector] public float unitLeftoverMoveDistance;
+    [HideInInspector] public float costOfMovementThisTurn;
     
     public int unitDamagePower;
     public int attackRange;
+    public float attackCost;
     
     private UnitMovement unitMovement;
     private List<Vector3> path;
-    private Vector3 unitStartPos = Vector3.zero;
 
     private float distanceBetweenNodes;
     
@@ -25,7 +26,7 @@ public class Unit : MonoBehaviour
     private void Start()
     {
         UnitMovementComplete = false;
-        unitCurrentMoveDistance = UnitMaxMoveDistance;
+        unitLeftoverMoveDistance = UnitMaxMoveDistance;
         distanceBetweenNodes = FindObjectOfType<Grid>().distanceToNextSphere;
         attackRange = attackRange * (int)distanceBetweenNodes;
         
@@ -41,16 +42,13 @@ public class Unit : MonoBehaviour
 
     private void UnitHasFinishedMovement()
     {
-        Debug.Log(unitCurrentMoveDistance);
 
-        unitCurrentMoveDistance = CalculateMoveDistance();
+        unitLeftoverMoveDistance -= costOfMovementThisTurn;
         unitIsMoving = false;
-        Debug.Log(unitCurrentMoveDistance);
-        Debug.Log(distanceBetweenNodes);
+        UnitMovementComplete = true;
 
-        if (unitCurrentMoveDistance < distanceBetweenNodes)
+        if (unitLeftoverMoveDistance < distanceBetweenNodes)
         {
-            UnitMovementComplete = true;
             unitHasMovesLeft = false;
         }
         
@@ -58,18 +56,22 @@ public class Unit : MonoBehaviour
 
     public void ResetUnitMovement()
     {
-        unitCurrentMoveDistance = UnitMaxMoveDistance;
+        unitLeftoverMoveDistance = UnitMaxMoveDistance;
         UnitMovementComplete = false;
         unitHasMovesLeft = true;
     }
 
     public void SetUnitPath(List<Vector3> newPath)
     {
-        SetTurnStartPos();
         path = newPath;
         unitIsMoving = true;
         UnitMovementComplete = false;
         unitMovement.MoveUnit(path);
+    }
+
+    private void SetPathLine()
+    {
+        
     }
 
     public void UnitIsMoving()
@@ -80,25 +82,12 @@ public class Unit : MonoBehaviour
     public void AttackEnemy(GameObject enemy)
     {
         Health enemyHealth = enemy.GetComponent<Health>();
-        
+        unitLeftoverMoveDistance -= attackCost;
+
         enemyHealth.TakeDamage(unitDamagePower);
     }
 
-    private float CalculateMoveDistance()
-    {
-        float distanceMovedThisTurn = 0;
 
-        distanceMovedThisTurn = Vector3.Distance(unitStartPos, transform.position);
-
-        return distanceMovedThisTurn;
-    }
-
-    private void SetTurnStartPos()
-    {
-        unitStartPos = transform.position;
-    }
-    
-    
     private void OnDrawGizmos()
     {
         if (path != null)
