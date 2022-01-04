@@ -6,6 +6,8 @@ using UnityEngine.Events;
 
 public class MovementLogic : MonoBehaviour
 {
+    [SerializeField] private DisplayInformation displayInformation;
+
     private bool playerTurn = false;
     protected Unit selectedUnit;
     protected Unit unitToAttack;
@@ -51,10 +53,9 @@ public class MovementLogic : MonoBehaviour
         {
             unit.ResetUnitMovement();
         }
+        displayInformation.SetActivePlayerText(gameObject.name);
+        ChangeSelectedUnit(0);
 
-        currentUnitPosInList = 0;
-        selectedUnit = myUnits[currentUnitPosInList];
-        pathFinding.SetActiveUnit(selectedUnit);
     }
 
     protected void AddNewUnitToMyList(Unit newUnit)
@@ -79,6 +80,8 @@ public class MovementLogic : MonoBehaviour
         //If the unit still has moves left reset pathfinding start node pos
         if (selectedUnit.unitHasMovesLeft)
         {
+            displayInformation.SetMoveCostText(selectedUnit.unitLeftoverMoveDistance);
+
             pathFinding.SetActiveUnit(selectedUnit);
             selectedUnit.UnitMovementComplete = false;
             return;
@@ -104,7 +107,8 @@ public class MovementLogic : MonoBehaviour
         if (selectedUnit.UnitMovementComplete)
             GetNextUnitInList();
         
-        pathFinding.SetActiveUnit(selectedUnit);
+        ChangeSelectedUnit(currentUnitPosInList);
+
     }
 
     protected void ChangeSelectedUnit(int newUnitPos)
@@ -112,6 +116,9 @@ public class MovementLogic : MonoBehaviour
         currentUnitPosInList = newUnitPos;
         selectedUnit = myUnits[currentUnitPosInList];
         pathFinding.SetActiveUnit(selectedUnit);
+        displayInformation.SetMoveCostText(selectedUnit.unitLeftoverMoveDistance);
+        displayInformation.SetCurrentActiveUnitText(selectedUnit.gameObject.name);
+
     }
 
     private bool CheckForTurnCompletion()
@@ -126,4 +133,5 @@ public class MovementLogic : MonoBehaviour
         PlayerTurnComplete.Invoke();
         return true;
     }
+    
 }

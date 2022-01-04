@@ -2,20 +2,20 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 using Random = UnityEngine.Random;
 
 public class GameLogic : MonoBehaviour
 {
-    public static GameLogic instance;
     [SerializeField]private List<PlayerLogic> players;
-    private int playerIndex = 0;
     private PlayerLogic currentPlayerLogic;
+
+    private int playerIndex = 0;
     private int currentPlayerTurn;
-    private Coroutine playerTurnCo;
     private float turnTimer = 90;
     private bool timerComplete = false;
-    [SerializeField] private GameObject unitPrefab;
-    
+    private Coroutine playerTurnCo;
+
 
     private void Start()
     {
@@ -46,6 +46,7 @@ public class GameLogic : MonoBehaviour
         currentPlayerLogic.PlayerTurnStart();
         timerComplete = false;
         playerTurnCo = StartCoroutine(PlayerTurnTimer());
+        
     }
 
     IEnumerator PlayerTurnTimer()

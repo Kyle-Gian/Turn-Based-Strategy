@@ -46,7 +46,6 @@ public class Unit : MonoBehaviour
         unitLeftoverMoveDistance -= costOfMovementThisTurn;
         unitIsMoving = false;
         UnitMovementComplete = true;
-
         if (unitLeftoverMoveDistance < distanceBetweenNodes)
         {
             unitHasMovesLeft = false;
